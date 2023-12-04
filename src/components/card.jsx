@@ -78,8 +78,8 @@ const Card = ({ id, index, image, moveCard }) => {
     return (
         <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
             <div className='flex justify-between items-center'>
-                <div className='w-1/2 h-12 border-black border p-1'>
-                 <img src={image} className='w-full h-full object-contain ' />
+                <div className='w-1/2 h-12 '>
+                    <img src={image} className='object-contain w-full h-full ' />
                 </div>
                 <h1 className='text-xl font-extrabold'>{id?.charAt(9)} </h1>
             </div>
