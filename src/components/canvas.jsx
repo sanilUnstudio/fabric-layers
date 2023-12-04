@@ -37,7 +37,7 @@ const Canvas = ({ canvasRef,screenHeight,screenWidth,setScreenHeight,setScreenWi
 
 
     return (
-        <div id='parent-container' style={{ height:screenWidth? screenWidth: '80vh',width:"60%" }} className='border border-black relative'>
+        <div id='parent-container' style={{ height:screenWidth? screenWidth: '80vh',width:"55%" }} className='border mx-auto border-black relative'>
 
         </div>
     )

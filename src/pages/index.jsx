@@ -407,10 +407,13 @@ export default function Home() {
       </div>
 
 
-      <div className='flex w-[calc(100%-350px)] xl:w-[calc(100%-450px)] justify-evenly items-center'>
-        <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
+      <div className='flex justify-between w-[calc(100%-250px)] xl:w-[calc(100%-350px)]  items-center'>
+        <div className='w-full '>
 
-        <div className='border flex-col border-black w-[12em] max-h-[25em] min-h-[12em]'>
+        <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
+        </div>
+
+        <div className='border flex flex-col justify border-black w-[12em] h-full mr-2'>
           {data.length > 0 && data.map((db, idx) => (
             renderCard(db, idx)
           ))}
