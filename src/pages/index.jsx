@@ -332,8 +332,13 @@ export default function Home() {
 
     const dataURL = dummyCanvas.toDataURL();
     console.log({base:dataURL})
-
   }
+
+  function saveState() {
+    const state = {
+    
+  }
+}
 
   return (
     <div className='h-screen w-screen flex'>
@@ -413,7 +418,7 @@ export default function Home() {
         <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
         </div>
 
-        <div className='border flex flex-col justify border-black w-[12em] h-full mr-2'>
+        <div className='border flex flex-col justify border-black w-[12em] h-full mr-1'>
           {data.length > 0 && data.map((db, idx) => (
             renderCard(db, idx)
           ))}
