@@ -106,7 +106,7 @@ export default function Home() {
     parentElement.appendChild(div);
     console.log(div.id, element.id)
     let canvas = init(element.id, parentElement, div.id);
- 
+
 
     currentCanvas?.discardActiveObject().renderAll();
     setCurrentCanvas(canvas);
@@ -277,9 +277,9 @@ export default function Home() {
   return (
     <div className='h-screen w-screen flex'>
 
-      <div className='w-[350px] xl:w-[450px] h-full bg-black text-white'>
-          <p className='text-center font-bold text-xl mt-8'>Add Image</p>
-        <div className='w-full  px-2 pb-5 flex flex-wrap  content-start gap-3 pt-8  overflow-y-auto'>
+      <div className='w-[250px] xl:w-[350px] flex flex-col gap-12 h-full overflow-hidden bg-black text-white'>
+        <p className='text-center font-bold text-xl mt-8'>Add Image</p>
+        <div className='w-full  px-2 pb-5 flex flex-wrap justify-center  content-start gap-3 pt-8  overflow-y-auto'>
           {assets && assets.length > 0 && assets.map((asset, index) => {
             return (
               <div key={index} className='group relative'>
@@ -297,9 +297,11 @@ export default function Home() {
         </div>
 
         <div className='flex flex-col gap-6 items-center'>
-          <button onClick={() => addLayer()} className='w-1/3 p-2 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Add Layer</button>
-          <button onClick={print} className='w-1/3 p-2 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Print</button>
-          <button onClick={base} className='w-1/3 p-2 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>base64</button>
+          <div className='flex w-[80%] justify-between'>
+            <button onClick={() => addLayer()} className=' py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Add Layer</button>
+            {/* <button onClick={print} className='py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Print</button> */}
+            <button onClick={base} className=' py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>base64</button>
+          </div>
           <div className='w-1/2 flex flex-col gap-4'>
             <label className='stroke-width text-lg font-bold'>
               Stroke Width
