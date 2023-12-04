@@ -5,7 +5,7 @@ import { FaPencil, FaEraser } from 'react-icons/fa6';
 import Card from '../components/card';
 const Canvas = dynamic(() => import('../components/canvas'), { ssr: false });
 import { fabric } from 'fabric';
-
+import * as NextImage from 'next/image';
 
 
 
@@ -19,6 +19,15 @@ export default function Home() {
   const [brush, setBrush] = useState();
   const [screenHeight, setScreenHeight] = useState();
   const [screenWidth, setScreenWidth] = useState();
+  const assets = [
+    'https://ik.imagekit.io/ei5bqbiry/assets/storageblogsoumya_gmail.com_1698590790_7338968443_7Co9EV_Cg.png',
+
+    'https://ik.imagekit.io/ei5bqbiry/assets/aseemkhanduja_gmail.com_57.17765310165135_59aF6kbVt.png',
+
+    'https://ik.imagekit.io/ei5bqbiry/assets/tanviagrawal99jln_gmail.com_1698300965_5560483227_SBA-WB8w6.png',
+
+    'https://ik.imagekit.io/ei5bqbiry/assets/aseemkhanduja_gmail.com_487.5038167631852_jwLQ2zKg_.png',
+  ];
 
   const renderCard = useCallback((db, idx) => {
     return (
@@ -26,8 +35,7 @@ export default function Home() {
     )
   })
 
-  function addProduct(canvas) {
-    let product = 'https://ik.imagekit.io/ei5bqbiry/unstudio_pictures_aseemkhanduja_gmail.com_image-1607_Y0XCEW8gCO.jpg?updatedAt=1698674245770'
+  function addProduct(canvas, product) {
     if (canvas) {
       fabric.Image.fromURL(product, function (img) {
         img.scaleToWidth(150);
@@ -68,11 +76,11 @@ export default function Home() {
     fabric.Object.prototype.cornerStyle = 'rect';
     fabric.Object.prototype.cornerSize = 6;
 
-    let dt = [...canvasRef.current];
-    let key = dt.length + 1;
-    let obj = { id:key, canvas:can };
-    dt = [...dt,obj];
-    canvasRef.current = dt;
+    let allCanvas = [...canvasRef.current];
+    let key = allCanvas.length + 1;
+    let obj = { id: key, canvas: can };
+    allCanvas = [...allCanvas, obj];
+    canvasRef.current = allCanvas;
     let url = can.toDataURL();
     setData((prev) => [{ id: parentId, img: url }, ...prev])
     return can
@@ -86,7 +94,7 @@ export default function Home() {
     div.id = `${'container' + (parentElement.children.length + 1)}`;
     div.style.width = parentElement.clientWidth;
     div.style.height = parentElement.clientHeight;
-    // setData((prev) => [...prev,div.id])
+
 
     let element = document.createElement("canvas");
     element.id = `${'canvas' + (parentElement.children.length + 1)}`;
@@ -98,15 +106,12 @@ export default function Home() {
     parentElement.appendChild(div);
     console.log(div.id, element.id)
     let canvas = init(element.id, parentElement, div.id);
-    // if (currentCanvas) {
-    //   currentCanvas.isDrawingMode = false;
-    // }
+ 
 
     currentCanvas?.discardActiveObject().renderAll();
     setCurrentCanvas(canvas);
     setDrawing(false);
     setEraserStatus(false);
-    // addProduct(parentElement.children.length)
   }
 
 
@@ -144,6 +149,7 @@ export default function Home() {
       let obj = canvasRef.current[idx - 1].canvas;
 
       if (obj) {
+        currentCanvas?.discardActiveObject().renderAll();
         setCurrentCanvas(obj);
       }
 
@@ -158,8 +164,8 @@ export default function Home() {
 
 
 
-  const addImage = () => {
-    addProduct(currentCanvas)
+  const addImage = (image) => {
+    addProduct(currentCanvas, image)
   }
 
 
@@ -176,7 +182,7 @@ export default function Home() {
 
 
   // To update the preview
-function updatePreview (canvas){
+  function updatePreview(canvas) {
     const updatedData = data.map(db => {
       if (db.id?.charAt(9) === canvas?.id.charAt(6)) {
         let url = canvas.toDataURL()
@@ -252,8 +258,8 @@ function updatePreview (canvas){
       })
     })
 
-// Adding the object in canvas
-    for (let i = canvasObjects.length - 1; i >= 0; i--){
+    // Adding the object in canvas
+    for (let i = canvasObjects.length - 1; i >= 0; i--) {
       canvasObjects[i]._objects.forEach((singleObject) => {
         can.add(singleObject);
         can.renderAll();
@@ -264,70 +270,93 @@ function updatePreview (canvas){
 
     const url = can.toDataURL();
     can.renderAll();
-    console.log({url})
+    console.log({ url })
 
   }
 
   return (
-    <div className='h-screen w-screen flex justify-evenly items-center'>
+    <div className='h-screen w-screen flex'>
 
-      <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
-
-      <div className='border flex-col border-black min-w-[12em] min-h-[12em]'>
-        {data.length > 0 && data.map((db, idx) => (
-          renderCard(db, idx)
-        ))}
-      </div>
-
-      <div className='flex flex-col gap-2'>
-        <button onClick={() => addLayer()} className='p-2 border-black border'>Add Layer</button>
-        <button onClick={() => addImage()} className='p-2 border-black border'>Add Image</button>
-        <button onClick={print} className='p-2 border-black border'>Print</button>
-        <button onClick={base} className='p-2 border-black border'>base64</button>
-        <div className='w-full flex flex-col gap-4'>
-          <label className='stroke-width text-lg font-bold'>
-            Stroke Width
-          </label>
-          <input
-            type='range'
-            min={1}
-            max={100}
-            value={strokeWidth / 1.25}
-            onChange={(event) =>
-              setStrokeWidth(event.target.valueAsNumber * 1.25)
-            }
-          />
+      <div className='w-[350px] xl:w-[450px] h-full bg-black text-white'>
+          <p className='text-center font-bold text-xl mt-8'>Add Image</p>
+        <div className='w-full  px-2 pb-5 flex flex-wrap  content-start gap-3 pt-8  overflow-y-auto'>
+          {assets && assets.length > 0 && assets.map((asset, index) => {
+            return (
+              <div key={index} className='group relative'>
+                <NextImage
+                  width={130}
+                  height={130}
+                  src={asset}
+                  alt='asset'
+                  className='aspect-square p-2 border border-1 rounded-md object-contain cursor-pointer'
+                  onClick={() => addImage(asset)}
+                />
+              </div>
+            );
+          })}
         </div>
-        <div className='w-full flex justify-around items-center gap-2'>
-          <button
-            className={`aspect-square p-2 flex justify-center items-center rounded-md border border-white ${drawing && !eraserStatus
-              ? 'bg-white text-black'
-              : 'bg-black text-white'
-              }`}
-            onClick={() => { setDrawing(!drawing); setEraserStatus(false) }}
-          >
-            <FaPencil className='text-xl' />
-          </button>
-          <button
-            className={`aspect-square p-2 flex justify-center items-center rounded-md border border-white ${eraserStatus
-              ? 'bg-white text-black'
-              : 'bg-black text-white'
-              }`}
-            onClick={() => {
-              setEraserStatus(!eraserStatus)
-              console.log(eraserStatus)
-              if (!eraserStatus) {
-                setDrawing(false)
+
+        <div className='flex flex-col gap-6 items-center'>
+          <button onClick={() => addLayer()} className='w-1/3 p-2 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Add Layer</button>
+          <button onClick={print} className='w-1/3 p-2 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Print</button>
+          <button onClick={base} className='w-1/3 p-2 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>base64</button>
+          <div className='w-1/2 flex flex-col gap-4'>
+            <label className='stroke-width text-lg font-bold'>
+              Stroke Width
+            </label>
+            <input
+              type='range'
+              min={1}
+              max={100}
+              value={strokeWidth / 1.25}
+              onChange={(event) =>
+                setStrokeWidth(event.target.valueAsNumber * 1.25)
               }
-            }}
-          >
-            <FaEraser className='text-xl' />
-          </button>
+            />
+          </div>
+          <div className='w-1/2 flex justify-between items-center gap-2'>
+            <button
+              className={`aspect-square p-2 flex justify-center items-center rounded-md border border-white ${drawing && !eraserStatus
+                ? 'bg-white text-black'
+                : 'bg-black text-white'
+                }`}
+              onClick={() => { setDrawing(!drawing); setEraserStatus(false) }}
+            >
+              <FaPencil className='text-xl' />
+            </button>
+            <button
+              className={`aspect-square p-2 flex justify-center items-center rounded-md border border-white ${eraserStatus
+                ? 'bg-white text-black'
+                : 'bg-black text-white'
+                }`}
+              onClick={() => {
+                setEraserStatus(!eraserStatus)
+                console.log(eraserStatus)
+                if (!eraserStatus) {
+                  setDrawing(false)
+                }
+              }}
+            >
+              <FaEraser className='text-xl' />
+            </button>
+          </div>
         </div>
       </div>
+
+
+      <div className='flex w-[calc(100%-350px)] xl:w-[calc(100%-450px)] justify-evenly items-center'>
+        <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
+
+        <div className='border flex-col border-black w-[12em] max-h-[25em] min-h-[12em]'>
+          {data.length > 0 && data.map((db, idx) => (
+            renderCard(db, idx)
+          ))}
+        </div>
+      </div>
+
 
       <div className='hidden'>
-      <canvas  id="base64"/>
+        <canvas id="base64" />
       </div>
     </div>
   )
