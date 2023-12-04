@@ -232,7 +232,26 @@ export default function Home() {
 
   }, [currentCanvas, eraserStatus, drawing, setBrush]);
 
-  const base = () => {
+
+  async function cloneObject(object, scaleX, scaleY) {
+    return new Promise((resolve) => {
+      object.clone((clone) => {
+        const width = clone.width * scaleX;
+        const height = clone.height * scaleY;
+        clone.scaleToHeight(height);
+        clone.scaleToWidth(width);
+        // Set the 'top' and 'left' of the cloned object to match the original object
+        clone.set({
+          left: object.left * scaleX,
+          top: object.top * scaleY
+        });
+        resolve(clone);
+      });
+    });
+  }
+
+
+  const base = async() => {
     const id = document.getElementById("base64");
     const can = new fabric.Canvas(id, {
       stopContextMenu: false,
@@ -240,7 +259,7 @@ export default function Home() {
       isDrawingMode: false,
       preserveObjectStacking: true,
       width: screenWidth,
-      height: screenHeight,
+      height: screenWidth,
     });
     can.renderAll();
     fabric.Object.prototype.transparentCorners = false;
@@ -267,10 +286,52 @@ export default function Home() {
     }
 
 
+    const dummyCanvas = new fabric.Canvas(
+      'offscreen-fabric-without-background-canvas',
+      {
+        height: 1024,
+        width: 1024,
+      }
+    );
 
-    const url = can.toDataURL();
-    can.renderAll();
-    console.log({ url })
+    dummyCanvas.backgroundColor = '#fff'
+
+    let scaleX = dummyCanvas.getWidth() / can.getWidth();
+    let scaleY = dummyCanvas.getHeight() / can.getHeight();
+    let allObjects = can.getObjects();
+    for (let obj of allObjects) {
+
+      if ('mask' in obj && !obj.mask) {
+        const objClone = fabric.util.object.clone(obj);
+        const width = objClone.getScaledWidth() * scaleX;
+        const height = objClone.getScaledHeight() * scaleY;
+        objClone.scaleToHeight(height);
+        objClone.scaleToWidth(width);
+        objClone.set({
+          left: objClone.left * scaleX,
+          top: objClone.top * scaleY
+        })
+        dummyCanvas.add(objClone);
+      } else if ('mask' in obj && obj.mask) {
+        const objClone = fabric.util.object.clone(obj);
+        const width = objClone.getScaledWidth() * scaleX;
+        const height = objClone.getScaledHeight() * scaleY;
+        objClone.scaleToHeight(height);
+        objClone.scaleToWidth(width);
+        objClone.set({
+          left: objClone.left * scaleX,
+          top: objClone.top * scaleY
+        })
+        dummyCanvas.add(objClone);
+      } else {
+        const objClone = await cloneObject(obj, scaleX, scaleY);
+        dummyCanvas.add(objClone);
+      }
+
+    };
+
+    const dataURL = dummyCanvas.toDataURL();
+    console.log({base:dataURL})
 
   }
 
@@ -285,7 +346,7 @@ export default function Home() {
               <div key={index} className='group relative'>
                 <NextImage
                   width={130}
-                  height={130}
+                  height={130} 
                   src={asset}
                   alt='asset'
                   className='aspect-square p-2 border border-1 rounded-md object-contain cursor-pointer'

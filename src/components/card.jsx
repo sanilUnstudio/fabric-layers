@@ -74,7 +74,7 @@ const Card = ({ id, index, image, moveCard }) => {
     })
     const opacity = isDragging ? 0 : 1
     drag(drop(ref))
-    // console.log(image)
+
     return (
         <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
             <div className='flex justify-between items-center'>
