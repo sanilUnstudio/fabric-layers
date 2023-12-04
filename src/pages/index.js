@@ -1,118 +1,334 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
+import dynamic from 'next/dynamic';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import update from "immutability-helper";
+import { FaPencil, FaEraser } from 'react-icons/fa6';
+import Card from '../components/card';
+const Canvas = dynamic(() => import('../components/canvas'), { ssr: false });
+import { fabric } from 'fabric';
 
-const inter = Inter({ subsets: ['latin'] })
+
+
 
 export default function Home() {
+  const canvasRef = useRef([]);
+  const [data, setData] = useState([]);
+  const [currentCanvas, setCurrentCanvas] = useState();
+  const [eraserStatus, setEraserStatus] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+  const [strokeWidth, setStrokeWidth] = useState(10);
+  const [brush, setBrush] = useState();
+  const [screenHeight, setScreenHeight] = useState();
+  const [screenWidth, setScreenWidth] = useState();
+
+  const renderCard = useCallback((db, idx) => {
+    return (
+      <Card key={db.id} id={db.id} index={idx} image={db.img} moveCard={moveCard} />
+    )
+  })
+
+  function addProduct(canvas) {
+    let product = 'https://ik.imagekit.io/ei5bqbiry/unstudio_pictures_aseemkhanduja_gmail.com_image-1607_Y0XCEW8gCO.jpg?updatedAt=1698674245770'
+    if (canvas) {
+      fabric.Image.fromURL(product, function (img) {
+        img.scaleToWidth(150);
+        img.scaleToHeight(150);
+        let tempWidth = canvas.width - img.getScaledWidth();
+        let tempHeight = canvas?.height - img.getScaledHeight();
+        img.set({
+          left: tempWidth / 2,
+          top: tempHeight / 2,
+          transparentCorners: false,
+          cornerStyle: 'circle',
+          cornerSize: 12,
+          erasable: false,
+          crossOrigin: "anonymous",
+          mask: false,
+          type: "2D"
+        });
+        canvas.add(img);
+        canvas.renderAll();
+      }, { crossOrigin: 'anonymous' });
+    }
+
+
+  }
+
+  function init(id, parent, parentId) {
+    const can = new fabric.Canvas(id, {
+      stopContextMenu: false,
+      fireRightClick: true,
+      isDrawingMode: false,
+      preserveObjectStacking: true,
+      width: parent.clientWidth,
+      height: parent.clientHeight,
+      id: id
+    });
+    can.renderAll();
+    fabric.Object.prototype.transparentCorners = false;
+    fabric.Object.prototype.cornerStyle = 'rect';
+    fabric.Object.prototype.cornerSize = 6;
+
+    let dt = [...canvasRef.current];
+    let key = dt.length + 1;
+    let obj = { id:key, canvas:can };
+    dt = [...dt,obj];
+    canvasRef.current = dt;
+    let url = can.toDataURL();
+    setData((prev) => [{ id: parentId, img: url }, ...prev])
+    return can
+  }
+
+
+  function addLayer() {
+    const parentElement = document.getElementById('parent-container');
+
+    let div = document.createElement("div");
+    div.id = `${'container' + (parentElement.children.length + 1)}`;
+    div.style.width = parentElement.clientWidth;
+    div.style.height = parentElement.clientHeight;
+    // setData((prev) => [...prev,div.id])
+
+    let element = document.createElement("canvas");
+    element.id = `${'canvas' + (parentElement.children.length + 1)}`;
+    div.appendChild(element)
+
+    div.style.position = 'absolute';
+    div.style.zIndex = parentElement.children.length + 1;
+
+    parentElement.appendChild(div);
+    console.log(div.id, element.id)
+    let canvas = init(element.id, parentElement, div.id);
+    // if (currentCanvas) {
+    //   currentCanvas.isDrawingMode = false;
+    // }
+
+    currentCanvas?.discardActiveObject().renderAll();
+    setCurrentCanvas(canvas);
+    setDrawing(false);
+    setEraserStatus(false);
+    // addProduct(parentElement.children.length)
+  }
+
+
+  function print() {
+    console.log(canvasRef.current);
+    console.log(data);
+    // console.log(currentCanvas)
+  }
+
+
+  const moveCard = useCallback((dragIndex, hoverIndex) => {
+    let dt = [];
+    setData((prevCards) => {
+      dt = update(prevCards, {
+        $splice: [
+          [dragIndex, 1],
+          [hoverIndex, 0, prevCards[dragIndex]]
+        ]
+      })
+
+      // Updating the z-index after drag or drop
+      document.querySelectorAll('#parent-container div').forEach(child => {
+        dt.map((db, idx) => {
+          let no = dt.length - idx
+          if (db.id == child.id) {
+            child.style.zIndex = no
+          }
+        })
+      });
+
+      // Taking the index canvas which is currently on top to set the currentCanvas state
+      console.log(dt)
+      let idx = dt[0].id.charAt(9);
+      console.log(canvasRef.current[idx - 1])
+      let obj = canvasRef.current[idx - 1].canvas;
+
+      if (obj) {
+        setCurrentCanvas(obj);
+      }
+
+      setDrawing(false);
+      setEraserStatus(false);
+      return dt
+    }
+
+    );
+
+  }, []);
+
+
+
+  const addImage = () => {
+    addProduct(currentCanvas)
+  }
+
+
+  useEffect(() => {
+    if (currentCanvas) {
+      currentCanvas.isDrawingMode = drawing || eraserStatus;
+      if (brush) {
+        currentCanvas.freeDrawingBrush = brush;
+      }
+      currentCanvas.freeDrawingBrush.color = "#000";
+      currentCanvas.freeDrawingBrush.width = strokeWidth;
+    }
+  }, [currentCanvas, drawing, eraserStatus, brush, strokeWidth]);
+
+
+  // To update the preview
+function updatePreview (canvas){
+    const updatedData = data.map(db => {
+      if (db.id?.charAt(9) === canvas?.id.charAt(6)) {
+        let url = canvas.toDataURL()
+        canvas.renderAll()
+        return { ...db, img: url };
+      }
+      return db;
+    });
+    setData(updatedData)
+  }
+
+
+  useEffect(() => {
+
+    if (currentCanvas) {
+      currentCanvas.on("mouse:up", () => { updatePreview(currentCanvas) })
+
+      return () => {
+        currentCanvas.off("mouse:up", () => { updatePreview(currentCanvas) })
+      }
+    }
+
+  }, [currentCanvas])
+
+
+  useEffect(() => {
+
+    if (currentCanvas) {
+      if (eraserStatus) {
+        const eraser = new fabric.EraserBrush(currentCanvas, {
+          strokeColor: 'rgba(0, 0, 0, 0.5)',
+        });
+        setBrush(eraser);
+      } else {
+        setBrush(new fabric.PencilBrush(currentCanvas));
+        if (currentCanvas) {
+          const drawnStrokes = currentCanvas.getObjects('path');
+          if (drawnStrokes.length > 0) {
+            drawnStrokes.forEach((stroke) => {
+              stroke.selectable = false;
+            });
+            currentCanvas.renderAll();
+          }
+        }
+      }
+    }
+
+  }, [currentCanvas, eraserStatus, drawing, setBrush]);
+
+  const base = () => {
+    const id = document.getElementById("base64");
+    const can = new fabric.Canvas(id, {
+      stopContextMenu: false,
+      fireRightClick: true,
+      isDrawingMode: false,
+      preserveObjectStacking: true,
+      width: screenWidth,
+      height: screenHeight,
+    });
+    can.renderAll();
+    fabric.Object.prototype.transparentCorners = false;
+    fabric.Object.prototype.cornerStyle = 'rect';
+    fabric.Object.prototype.cornerSize = 6;
+
+    const canvasObjects = [];
+
+    // Sorting the allCanvas according to the dnd
+    data.map((db) => {
+      canvasRef.current.map((dt) => {
+        if (db.id.charAt(9) == dt?.id) {
+          canvasObjects.push(dt.canvas);
+        }
+      })
+    })
+
+// Adding the object in canvas
+    for (let i = canvasObjects.length - 1; i >= 0; i--){
+      canvasObjects[i]._objects.forEach((singleObject) => {
+        can.add(singleObject);
+        can.renderAll();
+      })
+    }
+
+
+
+    const url = can.toDataURL();
+    can.renderAll();
+    console.log({url})
+
+  }
+
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
-    >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/pages/index.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className='h-screen w-screen flex justify-evenly items-center'>
+
+      <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
+
+      <div className='border flex-col border-black min-w-[12em] min-h-[12em]'>
+        {data.length > 0 && data.map((db, idx) => (
+          renderCard(db, idx)
+        ))}
+      </div>
+
+      <div className='flex flex-col gap-2'>
+        <button onClick={() => addLayer()} className='p-2 border-black border'>Add Layer</button>
+        <button onClick={() => addImage()} className='p-2 border-black border'>Add Image</button>
+        <button onClick={print} className='p-2 border-black border'>Print</button>
+        <button onClick={base} className='p-2 border-black border'>base64</button>
+        <div className='w-full flex flex-col gap-4'>
+          <label className='stroke-width text-lg font-bold'>
+            Stroke Width
+          </label>
+          <input
+            type='range'
+            min={1}
+            max={100}
+            value={strokeWidth / 1.25}
+            onChange={(event) =>
+              setStrokeWidth(event.target.valueAsNumber * 1.25)
+            }
+          />
+        </div>
+        <div className='w-full flex justify-around items-center gap-2'>
+          <button
+            className={`aspect-square p-2 flex justify-center items-center rounded-md border border-white ${drawing && !eraserStatus
+              ? 'bg-white text-black'
+              : 'bg-black text-white'
+              }`}
+            onClick={() => { setDrawing(!drawing); setEraserStatus(false) }}
           >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            <FaPencil className='text-xl' />
+          </button>
+          <button
+            className={`aspect-square p-2 flex justify-center items-center rounded-md border border-white ${eraserStatus
+              ? 'bg-white text-black'
+              : 'bg-black text-white'
+              }`}
+            onClick={() => {
+              setEraserStatus(!eraserStatus)
+              console.log(eraserStatus)
+              if (!eraserStatus) {
+                setDrawing(false)
+              }
+            }}
+          >
+            <FaEraser className='text-xl' />
+          </button>
         </div>
       </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
+      <div className='hidden'>
+      <canvas  id="base64"/>
       </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   )
 }
