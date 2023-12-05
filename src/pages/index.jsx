@@ -50,11 +50,12 @@ export default function Home() {
           cornerSize: 12,
           erasable: false,
           crossOrigin: "anonymous",
-          mask: false,
-          type: "2D"
+          mask: false
         });
         canvas.add(img);
         canvas.renderAll();
+        let dat = { canvas: canvasRef.current, dnd:data }
+        saveState({ data: dat })
       }, { crossOrigin: 'anonymous' });
     }
 
@@ -83,9 +84,10 @@ export default function Home() {
     canvasRef.current = allCanvas;
     let url = can.toDataURL();
     setData((prev) => [{ id: parentId, img: url }, ...prev])
+    let dat = { canvas: canvasRef.current, dnd: [{ id: parentId, img: url }, ...data] }
+    saveState({ data: dat })
     return can
   }
-
 
   function addLayer() {
     const parentElement = document.getElementById('parent-container');
@@ -116,9 +118,9 @@ export default function Home() {
 
 
   function print() {
-    console.log(canvasRef.current);
-    console.log(data);
-    // console.log(currentCanvas)
+    console.log({ allCanvas: canvasRef.current });
+    console.log({ dnd: data });
+    // console.log({currentCanvas:currentCanvas})
   }
 
 
@@ -152,6 +154,11 @@ export default function Home() {
         currentCanvas?.discardActiveObject().renderAll();
         setCurrentCanvas(obj);
       }
+
+      let dat = { canvas: canvasRef.current, dnd: dt }
+      saveState({ data: dat })
+
+      // console.log("sanil",dt)
 
       setDrawing(false);
       setEraserStatus(false);
@@ -191,21 +198,59 @@ export default function Home() {
       }
       return db;
     });
+    let dat = { canvas: canvasRef.current, dnd: updatedData }
+    saveState({ data: dat })
     setData(updatedData)
   }
 
 
+  // useEffect(() => {
+
+  //   if (currentCanvas) {
+  //     currentCanvas.on("mouse:up", () => {
+  //       updatePreview(currentCanvas);
+  //     })
+
+  //     return () => {
+  //       currentCanvas.off("mouse:up", () => {
+  //         updatePreview(currentCanvas);
+  //       })
+  //     }
+  //   }
+
+  // }, [currentCanvas])
+
   useEffect(() => {
-
     if (currentCanvas) {
-      currentCanvas.on("mouse:up", () => { updatePreview(currentCanvas) })
 
+      currentCanvas.on('object:modified', () => {
+        console.log("canvas modified")
+        updatePreview(currentCanvas);
+      })
+     
+      currentCanvas.on('path:created', () => {
+        updatePreview(currentCanvas);
+      })
+      currentCanvas.on('erasing:end', () => {
+        console.log("canvas eraser")
+        updatePreview(currentCanvas);
+      })
       return () => {
-        currentCanvas.off("mouse:up", () => { updatePreview(currentCanvas) })
+        currentCanvas.off("object:modified", () => {
+          console.log("canvas modified return")
+          updatePreview(currentCanvas);
+        })
+        currentCanvas.off("object:added", () => {
+          console.log("canvas added return")
+          updatePreview(currentCanvas);
+        })
+        currentCanvas.off("eraser:end", () => {
+          console.log("canvas eraser return")
+          updatePreview(currentCanvas);
+        })
       }
     }
-
-  }, [currentCanvas])
+  },[currentCanvas])
 
 
   useEffect(() => {
@@ -251,7 +296,7 @@ export default function Home() {
   }
 
 
-  const base = async() => {
+  const base = async () => {
     const id = document.getElementById("base64");
     const can = new fabric.Canvas(id, {
       stopContextMenu: false,
@@ -331,14 +376,150 @@ export default function Home() {
     };
 
     const dataURL = dummyCanvas.toDataURL();
-    console.log({base:dataURL})
+    console.log({ base: dataURL })
   }
 
-  function saveState() {
-    const state = {
-    
+  const historyRef = useRef({
+    canvasState: [],
+    currentStateIndex: -1,
+    undoStatus: false,
+    redoStatus: false,
+    undoFinishedStatus: 1,
+    redoFinishedStatus: 1,
+  });
+
+  // useEffect(() => {
+  //   if (data.length > 0) {
+  //     let dt = {canvas:canvasRef.current,dnd:data}
+  //     saveState({data:dt})
+  //   }
+  // },[data])
+
+  function saveState(param) {
+    if ((historyRef.current.undoStatus == false && historyRef.current.redoStatus == false)) {
+
+     
+        let canvas = [];
+        param.data.canvas.forEach((db) => {
+          let json = JSON.parse(JSON.stringify(db.canvas.toJSON()));
+          canvas.push({ id: db.id, json })
+        })
+        let dnd = param.data.dnd;
+        console.log(canvas)
+        var indexToBeInserted = historyRef.current.currentStateIndex + 1;
+
+        historyRef.current.canvasState[indexToBeInserted] = { canvas, dnd };
+        var numberOfElementsToRetain = indexToBeInserted + 1;
+        historyRef.current.canvasState = historyRef.current.canvasState.splice(0, numberOfElementsToRetain);
+        console.log(historyRef.current)
+      
+
+
+      if (param.type == 'layer') {
+        let layer = param.data.length;
+      }
+
+
+      // if (param.type == 'dnd') {
+       
+      //   var indexToBeInserted = historyRef.current.currentStateIndex + 1;
+      //   let history = historyRef.current.canvasState;
+      //   historyRef.current.canvasState[indexToBeInserted] = { canvas: history[history.length - 1]?.canvas, dnd };
+      //   var numberOfElementsToRetain = indexToBeInserted + 1;
+      //   historyRef.current.canvasState = historyRef.current.canvasState.splice(0, numberOfElementsToRetain);
+      //   console.log(historyRef.current)
+      // }
+
+      historyRef.current.currentStateIndex = historyRef.current.canvasState.length - 1;
+    }
+
   }
-}
+
+
+  function undo() {
+    if (historyRef.current.undoFinishedStatus) {
+      if (historyRef.current.currentStateIndex == -1) {
+        historyRef.current.undoStatus = false;
+      }
+
+      else {
+        if (historyRef.current.canvasState.length >= 1) {
+          historyRef.current.undoFinishedStatus = 0;
+          if (historyRef.current.currentStateIndex != 0) {
+            historyRef.current.undoStatus = true;
+
+            historyRef.current.canvasState[historyRef.current.currentStateIndex - 1].canvas.forEach((db) => {
+              canvasRef.current.map((singleCanvas) => {
+                if (singleCanvas.id === db.id) {
+                    singleCanvas.canvas.loadFromJSON(db.json, singleCanvas.canvas.renderAll.bind(singleCanvas.canvas))
+                }
+              })
+            })
+            
+            setData([...historyRef.current.canvasState[historyRef.current.currentStateIndex - 1].dnd]);
+
+            // Updating the z-index after drag or drop
+            document.querySelectorAll('#parent-container div').forEach(child => {
+              historyRef.current.canvasState[historyRef.current.currentStateIndex - 1].dnd.map((db, idx) => {
+                let no = historyRef.current.canvasState[historyRef.current.currentStateIndex - 1].dnd.length - idx
+                if (db.id == child.id) {
+                  child.style.zIndex = no
+                }
+              })
+            });
+
+            historyRef.current.undoStatus = false;
+            historyRef.current.currentStateIndex -= 1;
+            historyRef.current.undoFinishedStatus = 1;
+          }
+          else if (historyRef.current.currentStateIndex == 0) {
+            canvasRef.current[0].canvas.clear();
+            historyRef.current.undoFinishedStatus = 1;
+            historyRef.current.currentStateIndex -= 1;
+          }
+        }
+      }
+    }
+  }
+
+
+  function redo() {
+    if (historyRef.current.redoFinishedStatus) {
+      if ((historyRef.current.currentStateIndex == (historyRef.current.canvasState.length - 1)) && historyRef.current.currentStateIndex != -1) {
+        return;
+      }
+        else {
+          if (historyRef.current.canvasState.length > historyRef.current.currentStateIndex && historyRef.current.canvasState.length != 0) {
+            historyRef.current.redoFinishedStatus = 0;
+            historyRef.current.redoStatus = true;
+
+            historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].canvas.forEach((db) => {
+              canvasRef.current.map((singleCanvas) => {
+                if (singleCanvas.id === db.id) {
+                  singleCanvas.canvas.loadFromJSON(db.json, singleCanvas.canvas.renderAll.bind(singleCanvas.canvas))
+                }
+              })
+            })
+
+            setData([...historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd]);
+
+            // Updating the z-index after drag or drop
+            document.querySelectorAll('#parent-container div').forEach(child => {
+              historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd.map((db, idx) => {
+                let no = historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd.length - idx
+                if (db.id == child.id) {
+                  child.style.zIndex = no
+                }
+              })
+            });
+
+            historyRef.current.redoStatus = false;
+            historyRef.current.currentStateIndex += 1;
+            historyRef.current.redoFinishedStatus = 1;
+          }
+        }
+    }
+  }
 
   return (
     <div className='h-screen w-screen flex'>
@@ -351,7 +532,7 @@ export default function Home() {
               <div key={index} className='group relative'>
                 <NextImage
                   width={130}
-                  height={130} 
+                  height={130}
                   src={asset}
                   alt='asset'
                   className='aspect-square p-2 border border-1 rounded-md object-contain cursor-pointer'
@@ -365,7 +546,7 @@ export default function Home() {
         <div className='flex flex-col gap-6 items-center'>
           <div className='flex w-[80%] justify-between'>
             <button onClick={() => addLayer()} className=' py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Add Layer</button>
-            {/* <button onClick={print} className='py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Print</button> */}
+            <button onClick={print} className='py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Print</button>
             <button onClick={base} className=' py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>base64</button>
           </div>
           <div className='w-1/2 flex flex-col gap-4'>
@@ -408,6 +589,10 @@ export default function Home() {
               <FaEraser className='text-xl' />
             </button>
           </div>
+          <div className='w-1/2 flex justify-between items-center gap-2'>
+            <button className='py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border' onClick={undo}>Undo</button>
+            <button className='py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border' onClick={redo}>Redo</button>
+          </div>
         </div>
       </div>
 
@@ -415,7 +600,7 @@ export default function Home() {
       <div className='flex justify-between w-[calc(100%-250px)] xl:w-[calc(100%-350px)]  items-center'>
         <div className='w-full '>
 
-        <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
+          <Canvas canvasRef={canvasRef} screenHeight={screenHeight} screenWidth={screenWidth} setScreenHeight={setScreenHeight} setScreenWidth={setScreenWidth} />
         </div>
 
         <div className='border flex flex-col justify border-black w-[12em] h-full mr-1'>
