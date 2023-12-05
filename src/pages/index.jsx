@@ -20,7 +20,7 @@ export default function Home() {
   const [screenHeight, setScreenHeight] = useState();
   const [screenWidth, setScreenWidth] = useState();
   const assets = [
-    'https://ik.imagekit.io/ei5bqbiry/assets/storageblogsoumya_gmail.com_1698590790_7338968443_7Co9EV_Cg.png',
+    'https://ik.imagekit.io/ei5bqbiry/unstudio_pictures_aseemkhanduja_gmail.com_image-1607_Y0XCEW8gCO.jpg?updatedAt=1698674245770',
 
     'https://ik.imagekit.io/ei5bqbiry/assets/aseemkhanduja_gmail.com_57.17765310165135_59aF6kbVt.png',
 
@@ -54,7 +54,7 @@ export default function Home() {
         });
         canvas.add(img);
         canvas.renderAll();
-        let dat = { canvas: canvasRef.current, dnd:data }
+        let dat = { canvas: canvasRef.current, dnd: data }
         saveState({ data: dat })
       }, { crossOrigin: 'anonymous' });
     }
@@ -224,33 +224,28 @@ export default function Home() {
     if (currentCanvas) {
 
       currentCanvas.on('object:modified', () => {
-        console.log("canvas modified")
         updatePreview(currentCanvas);
       })
-     
+
       currentCanvas.on('path:created', () => {
         updatePreview(currentCanvas);
       })
       currentCanvas.on('erasing:end', () => {
-        console.log("canvas eraser")
         updatePreview(currentCanvas);
       })
       return () => {
         currentCanvas.off("object:modified", () => {
-          console.log("canvas modified return")
           updatePreview(currentCanvas);
         })
         currentCanvas.off("object:added", () => {
-          console.log("canvas added return")
           updatePreview(currentCanvas);
         })
         currentCanvas.off("eraser:end", () => {
-          console.log("canvas eraser return")
           updatePreview(currentCanvas);
         })
       }
     }
-  },[currentCanvas])
+  }, [currentCanvas])
 
 
   useEffect(() => {
@@ -298,7 +293,7 @@ export default function Home() {
 
   const base = async () => {
     const id = document.getElementById("base64");
-    const can = new fabric.Canvas(id, {
+    const canvasAll = new fabric.Canvas(id, {
       stopContextMenu: false,
       fireRightClick: true,
       isDrawingMode: false,
@@ -306,7 +301,7 @@ export default function Home() {
       width: screenWidth,
       height: screenWidth,
     });
-    can.renderAll();
+    canvasAll.renderAll();
     fabric.Object.prototype.transparentCorners = false;
     fabric.Object.prototype.cornerStyle = 'rect';
     fabric.Object.prototype.cornerSize = 6;
@@ -325,11 +320,12 @@ export default function Home() {
     // Adding the object in canvas
     for (let i = canvasObjects.length - 1; i >= 0; i--) {
       canvasObjects[i]._objects.forEach((singleObject) => {
-        can.add(singleObject);
-        can.renderAll();
+        canvasAll.add(singleObject);
+        canvasAll.renderAll();
       })
     }
 
+    console.log({url:canvasAll.toDataURL()})
 
     const dummyCanvas = new fabric.Canvas(
       'offscreen-fabric-without-background-canvas',
@@ -341,11 +337,11 @@ export default function Home() {
 
     dummyCanvas.backgroundColor = '#fff'
 
-    let scaleX = dummyCanvas.getWidth() / can.getWidth();
-    let scaleY = dummyCanvas.getHeight() / can.getHeight();
-    let allObjects = can.getObjects();
+    let scaleX = dummyCanvas.getWidth() / canvasAll.getWidth();
+    let scaleY = dummyCanvas.getHeight() / canvasAll.getHeight();
+    let allObjects = canvasAll.getObjects();
+    console.log(scaleX,scaleY)
     for (let obj of allObjects) {
-
       if ('mask' in obj && !obj.mask) {
         const objClone = fabric.util.object.clone(obj);
         const width = objClone.getScaledWidth() * scaleX;
@@ -388,40 +384,36 @@ export default function Home() {
     redoFinishedStatus: 1,
   });
 
-  // useEffect(() => {
-  //   if (data.length > 0) {
-  //     let dt = {canvas:canvasRef.current,dnd:data}
-  //     saveState({data:dt})
-  //   }
-  // },[data])
 
   function saveState(param) {
     if ((historyRef.current.undoStatus == false && historyRef.current.redoStatus == false)) {
 
-     
-        let canvas = [];
-        param.data.canvas.forEach((db) => {
-          let json = JSON.parse(JSON.stringify(db.canvas.toJSON()));
-          canvas.push({ id: db.id, json })
-        })
-        let dnd = param.data.dnd;
-        console.log(canvas)
-        var indexToBeInserted = historyRef.current.currentStateIndex + 1;
 
-        historyRef.current.canvasState[indexToBeInserted] = { canvas, dnd };
-        var numberOfElementsToRetain = indexToBeInserted + 1;
-        historyRef.current.canvasState = historyRef.current.canvasState.splice(0, numberOfElementsToRetain);
-        console.log(historyRef.current)
-      
+      let canvas = [];
+      param.data.canvas.forEach((db) => {
+
+        let json = JSON.stringify(db.canvas.toJSON());
+        // let obj = db.canvas?._objects[0];
+        // console.log({width:obj?.getScaledHeight(),height:obj?.getScaledWidth()})
+        canvas.push({ id: db.id, json })
+      })
+      let dnd = param.data.dnd;
+      var indexToBeInserted = historyRef.current.currentStateIndex + 1;
+
+      historyRef.current.canvasState[indexToBeInserted] = { canvas, dnd };
+      var numberOfElementsToRetain = indexToBeInserted + 1;
+      historyRef.current.canvasState = historyRef.current.canvasState.splice(0, numberOfElementsToRetain);
+      // console.log(historyRef.current)
 
 
-      if (param.type == 'layer') {
-        let layer = param.data.length;
-      }
+
+      // if (param.type == 'layer') {
+      //   let layer = param.data.length;
+      // }
 
 
       // if (param.type == 'dnd') {
-       
+
       //   var indexToBeInserted = historyRef.current.currentStateIndex + 1;
       //   let history = historyRef.current.canvasState;
       //   historyRef.current.canvasState[indexToBeInserted] = { canvas: history[history.length - 1]?.canvas, dnd };
@@ -451,11 +443,23 @@ export default function Home() {
             historyRef.current.canvasState[historyRef.current.currentStateIndex - 1].canvas.forEach((db) => {
               canvasRef.current.map((singleCanvas) => {
                 if (singleCanvas.id === db.id) {
-                    singleCanvas.canvas.loadFromJSON(db.json, singleCanvas.canvas.renderAll.bind(singleCanvas.canvas))
+                  singleCanvas.canvas.loadFromJSON(db.json, function () {
+                    singleCanvas.canvas.renderAll();
+                  }, function (o, object) {
+                    if (object.type == 'image') {
+                      object.set({
+                        transparentCorners: false,
+                        cornerStyle: 'circle',
+                        cornerSize: 12,
+                        erasable: false,
+                        mask: false
+                      })
+                    }
+                  })
                 }
               })
             })
-            
+
             setData([...historyRef.current.canvasState[historyRef.current.currentStateIndex - 1].dnd]);
 
             // Updating the z-index after drag or drop
@@ -473,7 +477,16 @@ export default function Home() {
             historyRef.current.undoFinishedStatus = 1;
           }
           else if (historyRef.current.currentStateIndex == 0) {
-            canvasRef.current[0].canvas.clear();
+            // canvasRef.current[0].canvas.clear();
+            historyRef.current.canvasState[0].canvas.forEach((db) => {
+              canvasRef.current.map((singleCanvas) => {
+                if (singleCanvas.id === db.id) {
+                  singleCanvas.canvas.loadFromJSON(db.json, singleCanvas.canvas.renderAll.bind(singleCanvas.canvas))
+                }
+              })
+            })
+
+            setData([...historyRef.current.canvasState[0].dnd]);
             historyRef.current.undoFinishedStatus = 1;
             historyRef.current.currentStateIndex -= 1;
           }
@@ -488,36 +501,36 @@ export default function Home() {
       if ((historyRef.current.currentStateIndex == (historyRef.current.canvasState.length - 1)) && historyRef.current.currentStateIndex != -1) {
         return;
       }
-        else {
-          if (historyRef.current.canvasState.length > historyRef.current.currentStateIndex && historyRef.current.canvasState.length != 0) {
-            historyRef.current.redoFinishedStatus = 0;
-            historyRef.current.redoStatus = true;
+      else {
+        if (historyRef.current.canvasState.length > historyRef.current.currentStateIndex && historyRef.current.canvasState.length != 0) {
+          historyRef.current.redoFinishedStatus = 0;
+          historyRef.current.redoStatus = true;
 
-            historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].canvas.forEach((db) => {
-              canvasRef.current.map((singleCanvas) => {
-                if (singleCanvas.id === db.id) {
-                  singleCanvas.canvas.loadFromJSON(db.json, singleCanvas.canvas.renderAll.bind(singleCanvas.canvas))
-                }
-              })
+          historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].canvas.forEach((db) => {
+            canvasRef.current.map((singleCanvas) => {
+              if (singleCanvas.id === db.id) {
+                singleCanvas.canvas.loadFromJSON(db.json, singleCanvas.canvas.renderAll.bind(singleCanvas.canvas))
+              }
             })
+          })
 
-            setData([...historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd]);
+          setData([...historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd]);
 
-            // Updating the z-index after drag or drop
-            document.querySelectorAll('#parent-container div').forEach(child => {
-              historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd.map((db, idx) => {
-                let no = historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd.length - idx
-                if (db.id == child.id) {
-                  child.style.zIndex = no
-                }
-              })
-            });
+          // Updating the z-index after drag or drop
+          document.querySelectorAll('#parent-container div').forEach(child => {
+            historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd.map((db, idx) => {
+              let no = historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].dnd.length - idx
+              if (db.id == child.id) {
+                child.style.zIndex = no
+              }
+            })
+          });
 
-            historyRef.current.redoStatus = false;
-            historyRef.current.currentStateIndex += 1;
-            historyRef.current.redoFinishedStatus = 1;
-          }
+          historyRef.current.redoStatus = false;
+          historyRef.current.currentStateIndex += 1;
+          historyRef.current.redoFinishedStatus = 1;
         }
+      }
     }
   }
 
