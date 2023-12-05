@@ -505,7 +505,19 @@ export default function Home() {
           historyRef.current.canvasState[historyRef.current.currentStateIndex + 1].canvas.forEach((db) => {
             canvasRef.current.map((singleCanvas) => {
               if (singleCanvas.id === db.id) {
-                singleCanvas.canvas.loadFromJSON(db.json, singleCanvas.canvas.renderAll.bind(singleCanvas.canvas))
+                singleCanvas.canvas.loadFromJSON(db.json, function () {
+                  singleCanvas.canvas.renderAll();
+                }, function (o, object) {
+                  if (object.type == 'image') {
+                    object.set({
+                      transparentCorners: false,
+                      cornerStyle: 'circle',
+                      cornerSize: 12,
+                      erasable: false,
+                      mask: false
+                    })
+                  }
+                })
               }
             })
           })
