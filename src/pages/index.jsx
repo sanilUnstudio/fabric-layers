@@ -106,7 +106,7 @@ export default function Home() {
     div.style.zIndex = parentElement.children.length + 1;
 
     parentElement.appendChild(div);
-    console.log(div.id, element.id)
+    // console.log(div.id, element.id)
     let canvas = init(element.id, parentElement, div.id);
 
 
@@ -120,7 +120,7 @@ export default function Home() {
   function print() {
     console.log({ allCanvas: canvasRef.current });
     console.log({ dnd: data });
-    // console.log({currentCanvas:currentCanvas})
+    console.log({currentCanvas:currentCanvas})
   }
 
 
@@ -145,9 +145,7 @@ export default function Home() {
       });
 
       // Taking the index canvas which is currently on top to set the currentCanvas state
-      console.log(dt)
       let idx = dt[0].id.charAt(9);
-      console.log(canvasRef.current[idx - 1])
       let obj = canvasRef.current[idx - 1].canvas;
 
       if (obj) {
@@ -325,7 +323,6 @@ export default function Home() {
       })
     }
 
-    console.log({url:canvasAll.toDataURL()})
 
     const dummyCanvas = new fabric.Canvas(
       'offscreen-fabric-without-background-canvas',
@@ -340,7 +337,6 @@ export default function Home() {
     let scaleX = dummyCanvas.getWidth() / canvasAll.getWidth();
     let scaleY = dummyCanvas.getHeight() / canvasAll.getHeight();
     let allObjects = canvasAll.getObjects();
-    console.log(scaleX,scaleY)
     for (let obj of allObjects) {
       if ('mask' in obj && !obj.mask) {
         const objClone = fabric.util.object.clone(obj);
@@ -557,9 +553,9 @@ export default function Home() {
         </div>
 
         <div className='flex flex-col gap-6 items-center'>
-          <div className='flex w-[80%] justify-between'>
+          <div className='flex xl:flex-row flex-col items-center gap-6 w-[80%] justify-between'>
             <button onClick={() => addLayer()} className=' py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Add Layer</button>
-            <button onClick={print} className='py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Print</button>
+            {/* <button onClick={print} className='py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>Print</button> */}
             <button onClick={base} className=' py-2 px-4 bg-[#fae27a] text-black  rounded-lg hover:border-black border-[#fae27a] hover:bg-white border'>base64</button>
           </div>
           <div className='w-1/2 flex flex-col gap-4'>
@@ -593,7 +589,6 @@ export default function Home() {
                 }`}
               onClick={() => {
                 setEraserStatus(!eraserStatus)
-                console.log(eraserStatus)
                 if (!eraserStatus) {
                   setDrawing(false)
                 }
