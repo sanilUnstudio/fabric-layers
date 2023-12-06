@@ -146,10 +146,17 @@ export default function Home() {
         })
       });
 
-      // Taking the index canvas which is currently on top to set the currentCanvas state
-      let idx = dt[0].id.charAt(9);
-      let obj = canvasRef.current[idx - 1].canvas;
+      // Taking the index canvas which is currently on top to set the currentCanvas state and if one canvas is hidden then find next appropriate canvas
+      let id = 0;
+        document.querySelectorAll('#parent-container >  div').forEach(child => {
+            if (child.style.display == 'none') {
+              id = id +1
+            }
+        });
 
+
+      let idx = dt[id].id.charAt(9);
+      let obj = canvasRef.current[idx - 1].canvas;
       if (obj) {
         currentCanvas?.discardActiveObject().renderAll();
         setCurrentCanvas(obj);
@@ -157,8 +164,6 @@ export default function Home() {
 
       let dat = { canvas: canvasRef.current, dnd: dt }
       saveState({ data: dat })
-
-      // console.log("sanil",dt)
 
       setDrawing(false);
       setEraserStatus(false);
