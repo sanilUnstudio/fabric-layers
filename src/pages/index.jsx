@@ -31,7 +31,7 @@ export default function Home() {
 
   const renderCard = useCallback((db, idx) => {
     return (
-      <Card key={db.id} id={db.id} index={idx} image={db.img} moveCard={moveCard} />
+      <Card key={db.id} id={db.id} index={idx} image={db.img} moveCard={moveCard} layerVisiblity={layerVisiblity} />
     )
   })
 
@@ -83,6 +83,8 @@ export default function Home() {
     allCanvas = [...allCanvas, obj];
     canvasRef.current = allCanvas;
     let url = can.toDataURL();
+
+
     setData((prev) => [{ id: parentId, img: url }, ...prev])
     let dat = { canvas: canvasRef.current, dnd: [{ id: parentId, img: url }, ...data] }
     saveState({ data: dat })
@@ -135,7 +137,7 @@ export default function Home() {
       })
 
       // Updating the z-index after drag or drop
-      document.querySelectorAll('#parent-container div').forEach(child => {
+      document.querySelectorAll('#parent-container >  div').forEach(child => {
         dt.map((db, idx) => {
           let no = dt.length - idx
           if (db.id == child.id) {
@@ -200,23 +202,6 @@ export default function Home() {
     saveState({ data: dat })
     setData(updatedData)
   }
-
-
-  // useEffect(() => {
-
-  //   if (currentCanvas) {
-  //     currentCanvas.on("mouse:up", () => {
-  //       updatePreview(currentCanvas);
-  //     })
-
-  //     return () => {
-  //       currentCanvas.off("mouse:up", () => {
-  //         updatePreview(currentCanvas);
-  //       })
-  //     }
-  //   }
-
-  // }, [currentCanvas])
 
   useEffect(() => {
     if (currentCanvas) {
@@ -383,8 +368,6 @@ export default function Home() {
 
   function saveState(param) {
     if ((historyRef.current.undoStatus == false && historyRef.current.redoStatus == false)) {
-
-
       let canvas = [];
       param.data.canvas.forEach((db) => {
 
@@ -399,25 +382,7 @@ export default function Home() {
       historyRef.current.canvasState[indexToBeInserted] = { canvas, dnd };
       var numberOfElementsToRetain = indexToBeInserted + 1;
       historyRef.current.canvasState = historyRef.current.canvasState.splice(0, numberOfElementsToRetain);
-      // console.log(historyRef.current)
-
-
-
-      // if (param.type == 'layer') {
-      //   let layer = param.data.length;
-      // }
-
-
-      // if (param.type == 'dnd') {
-
-      //   var indexToBeInserted = historyRef.current.currentStateIndex + 1;
-      //   let history = historyRef.current.canvasState;
-      //   historyRef.current.canvasState[indexToBeInserted] = { canvas: history[history.length - 1]?.canvas, dnd };
-      //   var numberOfElementsToRetain = indexToBeInserted + 1;
-      //   historyRef.current.canvasState = historyRef.current.canvasState.splice(0, numberOfElementsToRetain);
-      //   console.log(historyRef.current)
-      // }
-
+    
       historyRef.current.currentStateIndex = historyRef.current.canvasState.length - 1;
     }
 
@@ -540,6 +505,30 @@ export default function Home() {
         }
       }
     }
+  }
+
+  function layerVisiblity(id, visible) {
+    
+    document.querySelectorAll('#parent-container > div').forEach(child => {
+      if (id == child.id) {
+        
+        if (!visible) {
+          child.style.display = 'none'
+          let idx = document.querySelectorAll('#parent-container > div').length;
+          if (id.charAt(9) == idx) {
+            let obj = canvasRef.current[idx - 2].canvas;
+            if (obj) {
+              currentCanvas?.discardActiveObject().renderAll();
+              setCurrentCanvas(obj);
+            }
+          }
+        } else {
+          child.style.display = 'block'
+        }
+      }
+
+
+    });
   }
 
   return (

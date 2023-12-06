@@ -1,7 +1,8 @@
-import React, { useRef } from 'react'
+import React, { useRef,useState, useEffect } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 
-
+import { FaEye } from "react-icons/fa";
+import { FaEyeSlash } from "react-icons/fa";
 const ItemTypes = {
     CARD: 'card',
 }
@@ -12,11 +13,12 @@ const style = {
     padding: '0.5rem 1rem',
     marginBottom: '.5rem',
     backgroundColor: 'white',
-    cursor: 'move',
+    cursor: 'pointer',
 }
 
-const Card = ({ id, index, image, moveCard }) => {
-    const ref = useRef(null)
+const Card = ({ id, index, image, moveCard, layerVisiblity }) => {
+    const ref = useRef(null);
+    const [visible, setVisible] = useState(true);
     const [{ handlerId }, drop] = useDrop({
         accept: ItemTypes.CARD,
         collect(monitor) {
@@ -75,9 +77,19 @@ const Card = ({ id, index, image, moveCard }) => {
     const opacity = isDragging ? 0 : 1
     drag(drop(ref))
 
+
     return (
         <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
             <div className='flex justify-between items-center'>
+                <div onClick={() => {
+                    let visi = !visible
+                    layerVisiblity(id, visi)
+                    setVisible(visi);
+                }} >
+                   {visible? <FaEye />
+                    :<FaEyeSlash/>}
+                </div>
+
                 <div className='w-1/2 h-12 '>
                     <img src={image} className='object-contain w-full h-full ' />
                 </div>
