@@ -120,7 +120,7 @@ export default function Home() {
   function print() {
     console.log({ allCanvas: canvasRef.current });
     console.log({ dnd: data });
-    console.log({currentCanvas:currentCanvas})
+    console.log({ currentCanvas: currentCanvas })
   }
 
 
@@ -145,20 +145,21 @@ export default function Home() {
         })
       });
 
-     
+
       let id;
       for (let i = 0; i < dt.length; i++) {
         let canvasElement = document.getElementById(dt[i].id);
         if (canvasElement.style.display != 'none') {
           id = canvasElement.id;
+          break;
         }
       }
 
-      let obj = canvasRef.current[id.charAt(9)].canvas;
-      if (obj) {
+      let obj = canvasRef.current[id?.charAt(9)]?.canvas;
+
         currentCanvas?.discardActiveObject().renderAll();
         setCurrentCanvas(obj);
-      }
+
 
       let dat = { canvas: canvasRef.current, dnd: dt }
       saveState({ data: dat })
@@ -230,29 +231,35 @@ export default function Home() {
         })
       }
     }
-  }, [currentCanvas,data])
+  }, [currentCanvas, data])
 
-    
+  function updateCanvasAccToDndSerial() {
+    let id;
+    for (let i = 0; i < data.length; i++) {
+      let canvasElement = document.getElementById(data[i].id);
+      if (canvasElement.style.display != 'none') {
+        id = canvasElement.id;
+        console.log(id);
+        break;
+      }
+    }
+
+    let obj = canvasRef.current[id?.charAt(9) - 1]?.canvas;
+    currentCanvas?.discardActiveObject().renderAll();
+    setCurrentCanvas(obj);
+
+  }
+
+
   function layerVisiblity(id, visible) {
     document.querySelectorAll('#parent-container > div').forEach(child => {
       if (id == child.id) {
         if (!visible) {
           child.style.display = 'none'
-          let id;
-          for (let i = 0; i < data.length; i++) {
-            let canvasElement = document.getElementById(data[i].id);
-            if (canvasElement.style.display != 'none') {
-              id = canvasElement.id;
-            }
-          }
-
-          let obj = canvasRef.current[id.charAt(9)].canvas;
-          if (obj) {
-            currentCanvas?.discardActiveObject().renderAll();
-            setCurrentCanvas(obj);
-          }
+          updateCanvasAccToDndSerial();
         } else {
-          child.style.display = 'block'
+          child.style.display = 'block';
+          updateCanvasAccToDndSerial();
         }
       }
     });
@@ -411,7 +418,7 @@ export default function Home() {
       historyRef.current.canvasState[indexToBeInserted] = { canvas, dnd };
       var numberOfElementsToRetain = indexToBeInserted + 1;
       historyRef.current.canvasState = historyRef.current.canvasState.splice(0, numberOfElementsToRetain);
-    
+
       historyRef.current.currentStateIndex = historyRef.current.canvasState.length - 1;
     }
 
@@ -541,7 +548,7 @@ export default function Home() {
     <div className='h-screen w-screen flex'>
 
       <div className='w-[250px] xl:w-[350px] flex flex-col gap-12 h-full overflow-hidden bg-black text-white'>
-        
+
 
         <Control
           addLayer={addLayer}
@@ -558,7 +565,7 @@ export default function Home() {
           canvas={currentCanvas}
           assets={assets}
           addImage={addImage}
-        />       
+        />
       </div>
 
 
