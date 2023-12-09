@@ -134,6 +134,7 @@ export default function Home() {
         ]
       })
       currentCanvas?.discardActiveObject().renderAll();
+
       // Updating the z-index after drag or drop
       document.querySelectorAll('#parent-container >  div').forEach(child => {
         dt.map((db, idx) => {
@@ -144,17 +145,16 @@ export default function Home() {
         })
       });
 
-      // Taking the index canvas which is currently on top to set the currentCanvas state and if one canvas is hidden then find next appropriate canvas
-      let id = 0;
-        document.querySelectorAll('#parent-container >  div').forEach(child => {
-            if (child.style.display == 'none') {
-              id = id +1
-            }
-        });
+     
+      let id;
+      for (let i = 0; i < dt.length; i++) {
+        let canvasElement = document.getElementById(dt[i].id);
+        if (canvasElement.style.display != 'none') {
+          id = canvasElement.id;
+        }
+      }
 
-
-      let idx = dt[id].id.charAt(9);
-      let obj = canvasRef.current[idx - 1].canvas;
+      let obj = canvasRef.current[id.charAt(9)].canvas;
       if (obj) {
         currentCanvas?.discardActiveObject().renderAll();
         setCurrentCanvas(obj);
@@ -203,7 +203,6 @@ export default function Home() {
     });
     let dat = { canvas: canvasRef.current, dnd: updatedData }
     saveState({ data: dat })
-    setData(updatedData)
   }
 
   useEffect(() => {
@@ -223,15 +222,42 @@ export default function Home() {
         currentCanvas.off("object:modified", () => {
           updatePreview(currentCanvas);
         })
-        currentCanvas.off("object:added", () => {
+        currentCanvas.off("path:created", () => {
           updatePreview(currentCanvas);
         })
-        currentCanvas.off("eraser:end", () => {
+        currentCanvas.off("erasing:end", () => {
           updatePreview(currentCanvas);
         })
       }
     }
-  }, [currentCanvas])
+  }, [currentCanvas,data])
+
+    
+  function layerVisiblity(id, visible) {
+    document.querySelectorAll('#parent-container > div').forEach(child => {
+      if (id == child.id) {
+        if (!visible) {
+          child.style.display = 'none'
+          let id;
+          for (let i = 0; i < data.length; i++) {
+            let canvasElement = document.getElementById(data[i].id);
+            if (canvasElement.style.display != 'none') {
+              id = canvasElement.id;
+            }
+          }
+
+          let obj = canvasRef.current[id.charAt(9)].canvas;
+          if (obj) {
+            currentCanvas?.discardActiveObject().renderAll();
+            setCurrentCanvas(obj);
+          }
+        } else {
+          child.style.display = 'block'
+        }
+      }
+    });
+  }
+
 
 
   useEffect(() => {
@@ -510,29 +536,6 @@ export default function Home() {
     }
   }
 
-  function layerVisiblity(id, visible) {
-    
-    document.querySelectorAll('#parent-container > div').forEach(child => {
-      if (id == child.id) {
-        
-        if (!visible) {
-          child.style.display = 'none'
-          let idx = document.querySelectorAll('#parent-container > div').length;
-          if (id.charAt(9) == idx) {
-            let obj = canvasRef.current[idx - 2].canvas;
-            if (obj) {
-              currentCanvas?.discardActiveObject().renderAll();
-              setCurrentCanvas(obj);
-            }
-          }
-        } else {
-          child.style.display = 'block'
-        }
-      }
-
-
-    });
-  }
 
   return (
     <div className='h-screen w-screen flex'>
