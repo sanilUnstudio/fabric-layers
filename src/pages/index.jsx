@@ -145,7 +145,6 @@ export default function Home() {
         })
       });
 
-
       let id;
       for (let i = 0; i < dt.length; i++) {
         let canvasElement = document.getElementById(dt[i].id);
@@ -157,18 +156,15 @@ export default function Home() {
 
       let obj = canvasRef.current[id?.charAt(9)]?.canvas;
 
-        currentCanvas?.discardActiveObject().renderAll();
-        setCurrentCanvas(obj);
-
+      currentCanvas?.discardActiveObject().renderAll();
+      setCurrentCanvas(obj);
 
       let dat = { canvas: canvasRef.current, dnd: dt }
       saveState({ data: dat })
-
       setDrawing(false);
       setEraserStatus(false);
       return dt
     }
-
     );
 
   }, []);
